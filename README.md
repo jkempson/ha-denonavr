@@ -21,11 +21,19 @@ on the remote or in the receiver's menu shows straight away.
 
 Without telnet nothing would keep them current, so none are created.
 
+## Volume fix
+
+With telnet on, the library sends the main zone's volume as whole dB and drops
+a half step, so -30.5 dB lands at -31. `volume.py` sends the receiver's
+three-digit form (`MV495`) for the main zone. Other zones, and setups without
+telnet, use the library as it is.
+
 ## Keeping up with core
 
 `main` starts from a verbatim copy of `homeassistant/components/denonavr` at the
 Home Assistant release named in the first commit. The additions live in
-`entity.py`, `number.py`, `select.py`, `switch.py` and `translations/`, plus the
-platform list in `__init__.py` and the version in `manifest.json`. To take a new
+`entity.py`, `number.py`, `select.py`, `switch.py`, `volume.py` and `translations/`,
+plus the platform list in `__init__.py`, the volume call in `media_player.py` and
+the version in `manifest.json`. To take a new
 core release, copy its `denonavr` directory over, restore those, and move
 `requirements_test.txt` to the matching `pytest-homeassistant-custom-component`.
