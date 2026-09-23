@@ -49,6 +49,7 @@ from .const import (
     DEFAULT_UPDATE_AUDYSSEY,
     DOMAIN,
 )
+from .volume import async_set_volume
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -513,7 +514,7 @@ class DenonDevice(MediaPlayerEntity):
         volume_denon = float((volume * 100) - 80)
         if volume_denon > 18:
             volume_denon = float(18)
-        await self._receiver.async_set_volume(volume_denon)
+        await async_set_volume(self._receiver, volume_denon)
 
     # pylint: disable-next=home-assistant-action-swallowed-exception
     @async_log_errors
