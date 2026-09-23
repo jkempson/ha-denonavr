@@ -1,0 +1,4 @@
+# Pinned to the release built against the Home Assistant version the
+# integration was imported from. Move both together.
+pytest-homeassistant-custom-component==0.13.365
+denonavr==1.3.3

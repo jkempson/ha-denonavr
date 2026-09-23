@@ -1,13 +1,19 @@
 {
   "domain": "denonavr",
   "name": "Denon AVR Network Receivers",
-  "codeowners": ["@ol-iver", "@starkillerOG"],
+  "codeowners": [
+    "@jkempson"
+  ],
   "config_flow": true,
-  "documentation": "https://www.home-assistant.io/integrations/denonavr",
+  "documentation": "https://github.com/jkempson/ha-denonavr",
   "integration_type": "device",
   "iot_class": "local_push",
-  "loggers": ["denonavr"],
-  "requirements": ["denonavr==1.3.3"],
+  "loggers": [
+    "denonavr"
+  ],
+  "requirements": [
+    "denonavr==1.3.3"
+  ],
   "ssdp": [
     {
       "deviceType": "urn:schemas-upnp-org:device:MediaRenderer:1",
@@ -57,5 +63,7 @@
       "deviceType": "urn:schemas-denon-com:device:AiosDevice:1",
       "manufacturer": "Marantz"
     }
-  ]
+  ],
+  "issue_tracker": "https://github.com/jkempson/ha-denonavr/issues",
+  "version": "2026.9.2.1"
 }
