@@ -1,6 +1,6 @@
 """Tests for the telnet-driven receiver settings entities."""
 
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import MagicMock, patch
 
 from denonavr.exceptions import AvrCommandError
 import pytest
@@ -65,9 +65,8 @@ def client_fixture():
         client.multi_eq = "Reference"
         client.reference_level_offset = "0dB"
         client.dynamic_eq = True
-        # attrs instance attributes, which autospec cannot see on the class.
+        # An attrs instance attribute, which autospec cannot see on the class.
         client.audyssey = MagicMock()
-        client.telnet_api = MagicMock()
         client.audyssey.dynamic_volume_setting_list = [
             "Off",
             "Light",
@@ -76,7 +75,6 @@ def client_fixture():
         ]
         client.audyssey.multi_eq_setting_list = ["Off", "Flat", "Reference"]
         client.audyssey.reference_level_offset_setting_list = ["0dB", "+5dB"]
-        client.telnet_api.async_send_commands = AsyncMock()
         callbacks = []
         client.register_callback.side_effect = lambda _event, cb: callbacks.append(cb)
         client.fire = lambda: [cb("Main", "PS", "") for cb in list(callbacks)]
@@ -230,7 +228,7 @@ async def test_set_audio_delay(hass: HomeAssistant, client, ms, command) -> None
         blocking=True,
     )
 
-    client.telnet_api.async_send_commands.assert_awaited_once_with(command)
+    client.async_send_telnet_commands.assert_awaited_once_with(command)
 
 
 async def test_audio_delay_rejects_out_of_range(hass: HomeAssistant, client) -> None:
@@ -244,7 +242,7 @@ async def test_audio_delay_rejects_out_of_range(hass: HomeAssistant, client) -> 
             {ATTR_ENTITY_ID: AUDIO_DELAY, "value": 201},
             blocking=True,
         )
-    client.telnet_api.async_send_commands.assert_not_awaited()
+    client.async_send_telnet_commands.assert_not_awaited()
 
 
 @pytest.mark.parametrize(

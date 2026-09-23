@@ -40,7 +40,7 @@ def _delay_ms(receiver: DenonAVR) -> int | None:
 def _set_delay(receiver: DenonAVR, ms: int) -> Awaitable[None]:
     # The library only steps the delay up or down. The receiver takes an
     # absolute value on the same command.
-    return receiver.telnet_api.async_send_commands(f"PSDELAY {ms:03d}")
+    return receiver.async_send_telnet_commands(f"PSDELAY {ms:03d}")
 
 
 @dataclass(frozen=True, kw_only=True)

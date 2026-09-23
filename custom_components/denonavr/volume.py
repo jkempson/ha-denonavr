@@ -26,6 +26,6 @@ async def async_set_volume(receiver: DenonAVR, db: float) -> None:
     command. Other zones and HTTP-only setups use the library as it is.
     """
     if receiver.telnet_available and receiver.zone == "Main":
-        await receiver.telnet_api.async_send_commands(telnet_volume_command(db))
+        await receiver.async_send_telnet_commands(telnet_volume_command(db))
         return
     await receiver.async_set_volume(db)
