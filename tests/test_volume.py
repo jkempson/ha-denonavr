@@ -1,6 +1,6 @@
 """Tests for main-zone volume keeping the receiver's half steps."""
 
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 from pytest_homeassistant_custom_component.common import MockConfigEntry
@@ -61,7 +61,7 @@ def client_fixture():
         client.zones = {"Main": client}
         client.telnet_available = True
         client.telnet_healthy = True
-        # attrs instance attributes, which autospec cannot see on the class.
+        # An attrs instance attribute, which autospec cannot see on the class.
         client.audyssey = MagicMock()
         # The settings entities load alongside the media player with telnet on.
         for attr in (
@@ -77,8 +77,6 @@ def client_fixture():
         client.audyssey.dynamic_volume_setting_list = []
         client.audyssey.multi_eq_setting_list = []
         client.audyssey.reference_level_offset_setting_list = []
-        client.telnet_api = MagicMock()
-        client.telnet_api.async_send_commands = AsyncMock()
         yield client
 
 
@@ -117,7 +115,7 @@ async def test_half_step_sent_over_telnet(hass: HomeAssistant, client) -> None:
 
     await set_level(hass, 0.495)
 
-    client.telnet_api.async_send_commands.assert_awaited_once_with("MV495")
+    client.async_send_telnet_commands.assert_awaited_once_with("MV495")
     client.async_set_volume.assert_not_awaited()
 
 
@@ -129,7 +127,7 @@ async def test_http_only_uses_library(hass: HomeAssistant, client) -> None:
     await set_level(hass, 0.495)
 
     client.async_set_volume.assert_awaited_once_with(pytest.approx(-30.5))
-    client.telnet_api.async_send_commands.assert_not_awaited()
+    client.async_send_telnet_commands.assert_not_awaited()
 
 
 async def test_other_zone_uses_library(hass: HomeAssistant, client) -> None:
@@ -141,4 +139,4 @@ async def test_other_zone_uses_library(hass: HomeAssistant, client) -> None:
     await set_level(hass, 0.495)
 
     client.async_set_volume.assert_awaited_once_with(pytest.approx(-30.5))
-    client.telnet_api.async_send_commands.assert_not_awaited()
+    client.async_send_telnet_commands.assert_not_awaited()
