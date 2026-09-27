@@ -14,10 +14,16 @@ on the remote or in the receiver's menu shows straight away.
 | --- | --- | --- |
 | Bass, Treble | number | -6 to +6 dB |
 | Audio delay | number | 0 to 200 ms |
+| Front left level, Subwoofer level, ... | number | -12 to +12 dB in 0.5 dB steps |
 | Dynamic Volume | select | Off, Light, Medium, Heavy |
 | MultEQ | select | as the receiver reports |
 | Reference level offset | select | 0, +5, +10, +15 dB |
 | Dynamic EQ | switch | |
+
+The channel levels are the receiver's Channel Level Adjust, an offset on top of
+the speaker levels in its setup menu that it stores for each input. There is one
+entity for each channel the receiver reports, so only the speakers its layout
+drives appear.
 
 Without telnet nothing would keep them current, so none are created.
 
