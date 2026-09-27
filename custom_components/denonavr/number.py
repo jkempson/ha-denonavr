@@ -13,6 +13,7 @@ from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
 from . import DenonavrConfigEntry
+from .speaker_levels import async_setup_speaker_levels
 from .entity import (
     DenonAvrSettingDescription,
     DenonAvrSettingEntity,
@@ -101,7 +102,7 @@ def _channel_level_description(code: str) -> DenonAvrNumberDescription:
     channel = CHANNEL_MAP[code]
     return DenonAvrNumberDescription(
         key=f"channel_level_{code.lower()}",
-        name=f"{channel.capitalize().replace('Center', 'Centre')} level",
+        name=f"{channel.capitalize().replace('Center', 'Centre')} level adjust",
         icon="mdi:tune-vertical",
         native_min_value=-CHANNEL_LEVEL_LIMIT,
         native_max_value=CHANNEL_LEVEL_LIMIT,
@@ -119,6 +120,7 @@ async def async_setup_entry(
     async_add_entities: AddConfigEntryEntitiesCallback,
 ) -> None:
     """Add the main zone's numeric settings."""
+    await async_setup_speaker_levels(hass, config_entry, async_add_entities)
     if not telnet_enabled(config_entry):
         return
     receiver = config_entry.runtime_data

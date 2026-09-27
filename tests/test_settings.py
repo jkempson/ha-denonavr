@@ -36,9 +36,9 @@ DYNAMIC_VOLUME = f"select.{NAME.lower()}_dynamic_volume"
 MULTI_EQ = f"select.{NAME.lower()}_multeq"
 REF_LEVEL = f"select.{NAME.lower()}_reference_level_offset"
 DYNAMIC_EQ = f"switch.{NAME.lower()}_dynamic_eq"
-FRONT_LEFT_LEVEL = f"number.{NAME.lower()}_front_left_level"
-CENTRE_LEVEL = f"number.{NAME.lower()}_centre_level"
-SUB_LEVEL = f"number.{NAME.lower()}_subwoofer_level"
+FRONT_LEFT_LEVEL = f"number.{NAME.lower()}_front_left_level_adjust"
+CENTRE_LEVEL = f"number.{NAME.lower()}_centre_level_adjust"
+SUB_LEVEL = f"number.{NAME.lower()}_subwoofer_level_adjust"
 
 
 @pytest.fixture(name="client")
@@ -349,7 +349,10 @@ async def test_channel_reported_after_setup_is_added(
     await hass.async_block_till_done()
 
     assert hass.states.get(CENTRE_LEVEL).state == "2.5"
-    assert len(hass.states.async_entity_ids("number")) == 4
+    adjusts = [
+        e for e in hass.states.async_entity_ids("number") if e.endswith("_adjust")
+    ]
+    assert adjusts == [CENTRE_LEVEL]
 
 
 async def test_channel_level_follows_telnet(hass: HomeAssistant, client) -> None:

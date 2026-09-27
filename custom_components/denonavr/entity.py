@@ -27,6 +27,25 @@ def telnet_enabled(config_entry: DenonavrConfigEntry) -> bool:
     return config_entry.options.get(CONF_USE_TELNET, DEFAULT_USE_TELNET)
 
 
+def setting_unique_id(config_entry: DenonavrConfigEntry, key: str) -> str:
+    """Unique id for one of the main zone's settings."""
+    return f"{config_entry.unique_id or config_entry.entry_id}-{key}"
+
+
+def receiver_device_info(
+    config_entry: DenonavrConfigEntry, receiver: DenonAVR
+) -> DeviceInfo:
+    """The device the media player sits on, shared by every setting."""
+    return DeviceInfo(
+        configuration_url=f"http://{config_entry.data[CONF_HOST]}/",
+        hw_version=config_entry.data[CONF_TYPE],
+        identifiers={(DOMAIN, config_entry.unique_id or config_entry.entry_id)},
+        manufacturer=config_entry.data[CONF_MANUFACTURER],
+        model=config_entry.data[CONF_MODEL],
+        name=receiver.name,
+    )
+
+
 @dataclass(frozen=True, kw_only=True)
 class DenonAvrSettingDescription(EntityDescription):
     """A receiver setting read from the main zone."""
@@ -56,16 +75,8 @@ class DenonAvrSettingEntity(Entity):
         """Initialise the entity against the main zone's receiver object."""
         self.entity_description = description
         self._receiver = receiver
-        device_id = config_entry.unique_id or config_entry.entry_id
-        self._attr_unique_id = f"{device_id}-{description.key}"
-        self._attr_device_info = DeviceInfo(
-            configuration_url=f"http://{config_entry.data[CONF_HOST]}/",
-            hw_version=config_entry.data[CONF_TYPE],
-            identifiers={(DOMAIN, device_id)},
-            manufacturer=config_entry.data[CONF_MANUFACTURER],
-            model=config_entry.data[CONF_MODEL],
-            name=receiver.name,
-        )
+        self._attr_unique_id = setting_unique_id(config_entry, description.key)
+        self._attr_device_info = receiver_device_info(config_entry, receiver)
         self._last_snapshot: tuple[Any, bool] | None = None
 
     @property
