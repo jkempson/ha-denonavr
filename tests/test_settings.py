@@ -1,6 +1,6 @@
 """Tests for the telnet-driven receiver settings entities."""
 
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 from denonavr.exceptions import AvrCommandError
 import pytest
@@ -36,6 +36,9 @@ DYNAMIC_VOLUME = f"select.{NAME.lower()}_dynamic_volume"
 MULTI_EQ = f"select.{NAME.lower()}_multeq"
 REF_LEVEL = f"select.{NAME.lower()}_reference_level_offset"
 DYNAMIC_EQ = f"switch.{NAME.lower()}_dynamic_eq"
+FRONT_LEFT_LEVEL = f"number.{NAME.lower()}_front_left_level"
+CENTRE_LEVEL = f"number.{NAME.lower()}_centre_level"
+SUB_LEVEL = f"number.{NAME.lower()}_subwoofer_level"
 
 
 @pytest.fixture(name="client")
@@ -75,9 +78,17 @@ def client_fixture():
         ]
         client.audyssey.multi_eq_setting_list = ["Off", "Flat", "Reference"]
         client.audyssey.reference_level_offset_setting_list = ["0dB", "+5dB"]
+        client.vol = MagicMock()
+        client.vol.channel_volumes = {"Front Left": 0.0, "Subwoofer": -1.5}
+        client.vol.async_channel_volume = AsyncMock()
         callbacks = []
-        client.register_callback.side_effect = lambda _event, cb: callbacks.append(cb)
-        client.fire = lambda: [cb("Main", "PS", "") for cb in list(callbacks)]
+        client.register_callback.side_effect = lambda event, cb: callbacks.append(
+            (event, cb)
+        )
+        client.fire = lambda event="PS": [
+            cb("Main", event, "") for _, cb in list(callbacks)
+        ]
+        client.callbacks = callbacks
         yield client
 
 
@@ -307,3 +318,75 @@ async def test_unload_stops_following_telnet(hass: HomeAssistant, client) -> Non
     await hass.async_block_till_done()
 
     assert client.unregister_callback.call_count == client.register_callback.call_count
+
+
+async def test_channel_levels_for_reported_channels(
+    hass: HomeAssistant, client
+) -> None:
+    """Only channels the receiver reports get a level, in half-dB steps."""
+    await setup_receiver(hass)
+
+    assert hass.states.get(FRONT_LEFT_LEVEL).state == "0.0"
+    assert hass.states.get(SUB_LEVEL).state == "-1.5"
+    assert hass.states.get(CENTRE_LEVEL) is None
+    assert hass.states.get(SUB_LEVEL).attributes["min"] == -12
+    assert hass.states.get(SUB_LEVEL).attributes["max"] == 12
+    assert hass.states.get(SUB_LEVEL).attributes["step"] == 0.5
+
+
+async def test_channel_reported_after_setup_is_added(
+    hass: HomeAssistant, client
+) -> None:
+    """A CV line for a new channel adds its entity."""
+    client.vol.channel_volumes = None
+    await setup_receiver(hass)
+    assert hass.states.get(CENTRE_LEVEL) is None
+
+    client.vol.channel_volumes = {"Center": 2.5}
+    client.fire("CV")
+    await hass.async_block_till_done()
+    client.fire("CV")
+    await hass.async_block_till_done()
+
+    assert hass.states.get(CENTRE_LEVEL).state == "2.5"
+    assert len(hass.states.async_entity_ids("number")) == 4
+
+
+async def test_channel_level_follows_telnet(hass: HomeAssistant, client) -> None:
+    """A level changed on the receiver reaches the entity."""
+    await setup_receiver(hass)
+
+    client.vol.channel_volumes = {"Front Left": 0.0, "Subwoofer": 3.0}
+    client.fire("CV")
+    await hass.async_block_till_done()
+
+    assert hass.states.get(SUB_LEVEL).state == "3.0"
+
+
+@pytest.mark.parametrize("db", [-12.0, -2.5, 12.0])
+async def test_set_channel_level(hass: HomeAssistant, client, db) -> None:
+    """Half steps reach the library unrounded."""
+    await setup_receiver(hass)
+
+    await hass.services.async_call(
+        "number",
+        "set_value",
+        {ATTR_ENTITY_ID: SUB_LEVEL, "value": db},
+        blocking=True,
+    )
+
+    client.vol.async_channel_volume.assert_awaited_once_with("Subwoofer", db)
+
+
+async def test_channel_level_rejects_out_of_range(hass: HomeAssistant, client) -> None:
+    """Values past the receiver's range never reach it."""
+    await setup_receiver(hass)
+
+    with pytest.raises(ServiceValidationError):
+        await hass.services.async_call(
+            "number",
+            "set_value",
+            {ATTR_ENTITY_ID: SUB_LEVEL, "value": 12.5},
+            blocking=True,
+        )
+    client.vol.async_channel_volume.assert_not_awaited()
